@@ -7,13 +7,28 @@ from config import get_settings
 
 settings = get_settings()
 
+# 根据数据库类型配置引擎参数
+engine_kwargs = {
+    "echo": False,
+}
+
+# SQLite 使用 NullPool，不支持 pool_size/max_overflow
+# MySQL 使用 QueuePool，需要连接池配置
+if settings.DATABASE_URL.startswith("sqlite"):
+    # SQLite: 不需要连接池参数
+    pass
+else:
+    # MySQL/PostgreSQL: 使用连接池
+    engine_kwargs.update({
+        "pool_pre_ping": True,
+        "pool_size": 10,
+        "max_overflow": 20,
+    })
+
 # 创建异步引擎
 engine = create_async_engine(
     settings.DATABASE_URL,
-    echo=False,
-    pool_pre_ping=True,
-    pool_size=10,
-    max_overflow=20,
+    **engine_kwargs
 )
 
 # 创建异步会话工厂
