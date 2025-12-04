@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API 测试工具 | WHOIS & DNS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0f1419;
+            --bg-secondary: #151a21;
+            --bg-card: #1c232d;
+            --bg-input: #0d1117;
+            --border-color: #2d3748;
+            --text-primary: #e2e8f0;
+            --text-secondary: #a0aec0;
+            --text-muted: #718096;
+            --accent-green: #48bb78;
+            --accent-green-dim: rgba(72, 187, 120, 0.15);
+            --accent-red: #fc8181;
+            --accent-red-dim: rgba(252, 129, 129, 0.15);
+            --accent-yellow: #ecc94b;
+            --accent-yellow-dim: rgba(236, 201, 75, 0.15);
+            --accent-blue: #63b3ed;
+            --accent-blue-dim: rgba(99, 179, 237, 0.15);
+            --accent-purple: #b794f4;
+            --radius: 8px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        h1 .icon {
+            font-size: 2.2rem;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 900px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 14px;
+            font-size: 0.95rem;
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px var(--accent-blue-dim);
+        }
+
+        input::placeholder {
+            color: var(--text-muted);
+        }
+
+        select {
+            cursor: pointer;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+
+        .btn-primary {
+            background: var(--accent-green);
+            color: #1a202c;
+        }
+
+        .btn-primary:hover {
+            background: #38a169;
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border-color);
+        }
+
+        /* 请求信息 */
+        .request-info {
+            background: var(--bg-input);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+        }
+
+        .request-method {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        .request-method.GET {
+            background: var(--accent-green-dim);
+            color: var(--accent-green);
+        }
+
+        .request-url {
+            color: var(--text-secondary);
+            word-break: break-all;
+        }
+
+        .request-headers {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed var(--border-color);
+        }
+
+        .header-item {
+            display: flex;
+            margin-bottom: 4px;
+        }
+
+        .header-key {
+            color: var(--accent-purple);
+            min-width: 100px;
+        }
+
+        .header-value {
+            color: var(--accent-yellow);
+        }
+
+        /* 响应区域 */
+        .response-section {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .response-meta {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            background: var(--bg-input);
+            border-radius: var(--radius);
+            font-size: 0.9rem;
+        }
+
+        .meta-label {
+            color: var(--text-muted);
+        }
+
+        .meta-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+        }
+
+        .meta-value.success { color: var(--accent-green); }
+        .meta-value.error { color: var(--accent-red); }
+        .meta-value.warning { color: var(--accent-yellow); }
+
+        .response-body {
+            flex: 1;
+            min-height: 400px;
+            background: var(--bg-input);
+            border-radius: var(--radius);
+            padding: 16px;
+            overflow: auto;
+        }
+
+        .response-body pre {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-word;
+            margin: 0;
+        }
+
+        /* JSON 语法高亮 */
+        .json-key { color: var(--accent-purple); }
+        .json-string { color: var(--accent-green); }
+        .json-number { color: var(--accent-yellow); }
+        .json-boolean { color: var(--accent-blue); }
+        .json-null { color: var(--text-muted); }
+
+        /* 空状态 */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .empty-state .icon {
+            font-size: 4rem;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        /* 加载动画 */
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid transparent;
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 历史记录 */
+        .history-section {
+            margin-top: 24px;
+        }
+
+        .history-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .history-item:hover {
+            background: var(--bg-secondary);
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-status {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .history-status.success { background: var(--accent-green); }
+        .history-status.error { background: var(--accent-red); }
+
+        .history-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .history-endpoint {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .history-time {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .history-duration {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* 快捷操作 */
+        .quick-actions {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .quick-btn {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .quick-btn:hover {
+            background: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        /* 链接 */
+        .links {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s ease;
+        }
+
+        .links a:hover {
+            color: var(--accent-blue);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><span class="icon">🧪</span> API 测试工具</h1>
+            <p class="subtitle">模拟第三方调用，测试 API Key 和接口功能</p>
+        </header>
+
+        <div class="main-grid">
+            <!-- 左侧：请求配置 -->
+            <div class="left-panel">
+                <div class="card">
+                    <div class="card-header">🔧 请求配置</div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label>API Key *</label>
+                            <input type="text" id="apiKey" placeholder="输入你的 API Key" autocomplete="off">
+                        </div>
+
+                        <div class="form-group">
+                            <label>API 端点</label>
+                            <select id="endpoint">
+                                <option value="whois">WHOIS 查询 - /api/whois/{domain}</option>
+                                <option value="dns">DNS 查询 - /api/dns/{domain}</option>
+                                <option value="dns-type">DNS 指定类型 - /api/dns/{domain}/{type}</option>
+                                <option value="lookup">综合查询 - /api/lookup/{domain}</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>域名 *</label>
+                            <input type="text" id="domain" placeholder="例如：google.com">
+                        </div>
+
+                        <div class="form-group" id="dnsTypeGroup" style="display: none;">
+                            <label>DNS 记录类型</label>
+                            <select id="dnsType">
+                                <option value="A">A - IPv4 地址</option>
+                                <option value="AAAA">AAAA - IPv6 地址</option>
+                                <option value="CNAME">CNAME - 别名</option>
+                                <option value="MX">MX - 邮件交换</option>
+                                <option value="NS">NS - 域名服务器</option>
+                                <option value="TXT">TXT - 文本记录</option>
+                                <option value="SOA">SOA - 起始授权</option>
+                            </select>
+                        </div>
+
+                        <div class="quick-actions">
+                            <button class="quick-btn" onclick="setDomain('google.com')">google.com</button>
+                            <button class="quick-btn" onclick="setDomain('baidu.com')">baidu.com</button>
+                            <button class="quick-btn" onclick="setDomain('github.io')">github.io</button>
+                        </div>
+
+                        <!-- 请求预览 -->
+                        <div class="request-info">
+                            <div>
+                                <span class="request-method GET">GET</span>
+                                <span class="request-url" id="requestUrl">/api/whois/google.com</span>
+                            </div>
+                            <div class="request-headers">
+                                <div class="header-item">
+                                    <span class="header-key">X-API-Key:</span>
+                                    <span class="header-value" id="headerKeyPreview">未设置</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary" id="sendBtn" onclick="sendRequest()">
+                            <span class="btn-text">🚀 发送请求</span>
+                            <div class="spinner" style="display: none;"></div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 历史记录 -->
+                <div class="card history-section">
+                    <div class="card-header">📜 请求历史</div>
+                    <div class="history-list" id="historyList">
+                        <div class="empty-state" style="padding: 30px;">
+                            <p>暂无历史记录</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧：响应结果 -->
+            <div class="card response-section">
+                <div class="card-header">📥 响应结果</div>
+                <div class="card-body" style="display: flex; flex-direction: column;">
+                    <div class="response-meta" id="responseMeta" style="display: none;">
+                        <div class="meta-item">
+                            <span class="meta-label">状态码:</span>
+                            <span class="meta-value" id="statusCode">-</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">耗时:</span>
+                            <span class="meta-value" id="responseTime">-</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">大小:</span>
+                            <span class="meta-value" id="responseSize">-</span>
+                        </div>
+                    </div>
+                    <div class="response-body" id="responseBody">
+                        <div class="empty-state">
+                            <div class="icon">📭</div>
+                            <p>配置请求参数后点击「发送请求」</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="links">
+            <a href="/">← 返回查询页面</a>
+            <a href="/admin">管理面板</a>
+            <a href="/api/docs" target="_blank">API 文档</a>
+        </div>
+    </div>
+
+    <script>
+        // 状态
+        let history = JSON.parse(localStorage.getItem('apiTestHistory') || '[]');
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            // 从本地存储恢复 API Key
+            const savedKey = localStorage.getItem('testApiKey');
+            if (savedKey) {
+                document.getElementById('apiKey').value = savedKey;
+            }
+
+            // 事件监听
+            document.getElementById('apiKey').addEventListener('input', updatePreview);
+            document.getElementById('endpoint').addEventListener('change', onEndpointChange);
+            document.getElementById('domain').addEventListener('input', updatePreview);
+            document.getElementById('dnsType').addEventListener('change', updatePreview);
+
+            // 回车发送
+            document.getElementById('domain').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendRequest();
+            });
+
+            updatePreview();
+            renderHistory();
+        });
+
+        // 端点变更
+        function onEndpointChange() {
+            const endpoint = document.getElementById('endpoint').value;
+            const dnsTypeGroup = document.getElementById('dnsTypeGroup');
+            dnsTypeGroup.style.display = endpoint === 'dns-type' ? 'block' : 'none';
+            updatePreview();
+        }
+
+        // 更新请求预览
+        function updatePreview() {
+            const apiKey = document.getElementById('apiKey').value;
+            const endpoint = document.getElementById('endpoint').value;
+            const domain = document.getElementById('domain').value || '{domain}';
+            const dnsType = document.getElementById('dnsType').value;
+
+            let url = '';
+            switch (endpoint) {
+                case 'whois':
+                    url = `/api/whois/${domain}`;
+                    break;
+                case 'dns':
+                    url = `/api/dns/${domain}`;
+                    break;
+                case 'dns-type':
+                    url = `/api/dns/${domain}/${dnsType}`;
+                    break;
+                case 'lookup':
+                    url = `/api/lookup/${domain}`;
+                    break;
+            }
+
+            document.getElementById('requestUrl').textContent = url;
+            document.getElementById('headerKeyPreview').textContent = apiKey ? apiKey.substring(0, 16) + '...' : '未设置';
+
+            // 保存 API Key
+            if (apiKey) {
+                localStorage.setItem('testApiKey', apiKey);
+            }
+        }
+
+        // 快捷设置域名
+        function setDomain(domain) {
+            document.getElementById('domain').value = domain;
+            updatePreview();
+        }
+
+        // 发送请求
+        async function sendRequest() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const domain = document.getElementById('domain').value.trim();
+            const endpoint = document.getElementById('endpoint').value;
+            const dnsType = document.getElementById('dnsType').value;
+
+            if (!apiKey) {
+                alert('请输入 API Key');
+                return;
+            }
+
+            if (!domain) {
+                alert('请输入域名');
+                return;
+            }
+
+            // 构建 URL
+            let url = '';
+            switch (endpoint) {
+                case 'whois':
+                    url = `/api/whois/${encodeURIComponent(domain)}`;
+                    break;
+                case 'dns':
+                    url = `/api/dns/${encodeURIComponent(domain)}`;
+                    break;
+                case 'dns-type':
+                    url = `/api/dns/${encodeURIComponent(domain)}/${dnsType}`;
+                    break;
+                case 'lookup':
+                    url = `/api/lookup/${encodeURIComponent(domain)}`;
+                    break;
+            }
+
+            // UI 状态
+            const btn = document.getElementById('sendBtn');
+            btn.disabled = true;
+            btn.querySelector('.btn-text').style.display = 'none';
+            btn.querySelector('.spinner').style.display = 'block';
+
+            const startTime = performance.now();
+
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'X-API-Key': apiKey,
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const endTime = performance.now();
+                const duration = Math.round(endTime - startTime);
+                const data = await response.json();
+                const size = new Blob([JSON.stringify(data)]).size;
+
+                // 显示结果
+                showResponse(response.status, duration, size, data);
+
+                // 添加到历史
+                addToHistory({
+                    endpoint: url,
+                    status: response.status,
+                    duration: duration,
+                    success: response.ok,
+                    time: new Date().toISOString()
+                });
+
+            } catch (error) {
+                const endTime = performance.now();
+                const duration = Math.round(endTime - startTime);
+                
+                showResponse(0, duration, 0, { error: error.message });
+                
+                addToHistory({
+                    endpoint: url,
+                    status: 0,
+                    duration: duration,
+                    success: false,
+                    time: new Date().toISOString()
+                });
+            } finally {
+                btn.disabled = false;
+                btn.querySelector('.btn-text').style.display = 'inline';
+                btn.querySelector('.spinner').style.display = 'none';
+            }
+        }
+
+        // 显示响应
+        function showResponse(status, duration, size, data) {
+            document.getElementById('responseMeta').style.display = 'flex';
+
+            const statusEl = document.getElementById('statusCode');
+            statusEl.textContent = status || 'Error';
+            statusEl.className = 'meta-value ' + (status >= 200 && status < 300 ? 'success' : status >= 400 ? 'error' : 'warning');
+
+            document.getElementById('responseTime').textContent = `${duration} ms`;
+            document.getElementById('responseSize').textContent = formatBytes(size);
+
+            // 格式化 JSON
+            const formatted = syntaxHighlight(JSON.stringify(data, null, 2));
+            document.getElementById('responseBody').innerHTML = `<pre>${formatted}</pre>`;
+        }
+
+        // JSON 语法高亮
+        function syntaxHighlight(json) {
+            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                let cls = 'json-number';
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) {
+                        cls = 'json-key';
+                    } else {
+                        cls = 'json-string';
+                    }
+                } else if (/true|false/.test(match)) {
+                    cls = 'json-boolean';
+                } else if (/null/.test(match)) {
+                    cls = 'json-null';
+                }
+                return '<span class="' + cls + '">' + match + '</span>';
+            });
+        }
+
+        // 格式化字节
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        // 添加到历史
+        function addToHistory(item) {
+            history.unshift(item);
+            if (history.length > 20) {
+                history = history.slice(0, 20);
+            }
+            localStorage.setItem('apiTestHistory', JSON.stringify(history));
+            renderHistory();
+        }
+
+        // 渲染历史
+        function renderHistory() {
+            const container = document.getElementById('historyList');
+            
+            if (history.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="padding: 30px;">
+                        <p>暂无历史记录</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = history.map((item, index) => `
+                <div class="history-item" onclick="replayRequest(${index})">
+                    <div class="history-status ${item.success ? 'success' : 'error'}"></div>
+                    <div class="history-info">
+                        <div class="history-endpoint">${item.endpoint}</div>
+                        <div class="history-time">${formatTime(item.time)}</div>
+                    </div>
+                    <div class="history-duration">${item.duration}ms</div>
+                </div>
+            `).join('');
+        }
+
+        // 格式化时间
+        function formatTime(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+
+        // 重放请求
+        function replayRequest(index) {
+            const item = history[index];
+            // 解析 endpoint 设置表单
+            const parts = item.endpoint.split('/');
+            if (parts[2] === 'whois') {
+                document.getElementById('endpoint').value = 'whois';
+                document.getElementById('domain').value = decodeURIComponent(parts[3]);
+            } else if (parts[2] === 'dns') {
+                if (parts.length === 5) {
+                    document.getElementById('endpoint').value = 'dns-type';
+                    document.getElementById('domain').value = decodeURIComponent(parts[3]);
+                    document.getElementById('dnsType').value = parts[4];
+                } else {
+                    document.getElementById('endpoint').value = 'dns';
+                    document.getElementById('domain').value = decodeURIComponent(parts[3]);
+                }
+            } else if (parts[2] === 'lookup') {
+                document.getElementById('endpoint').value = 'lookup';
+                document.getElementById('domain').value = decodeURIComponent(parts[3]);
+            }
+            onEndpointChange();
+            updatePreview();
+        }
+    </script>
+</body>
+</html>
+

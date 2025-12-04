@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>域名查询系统 | WHOIS & DNS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0e14;
+            --bg-secondary: #0d1117;
+            --bg-tertiary: #161b22;
+            --bg-card: #1a1f26;
+            --border-color: #30363d;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --text-muted: #6e7681;
+            --accent-cyan: #39c5bb;
+            --accent-cyan-dim: rgba(57, 197, 187, 0.15);
+            --accent-orange: #f0883e;
+            --accent-purple: #a371f7;
+            --accent-green: #3fb950;
+            --accent-red: #f85149;
+            --accent-blue: #58a6ff;
+            --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.4);
+            --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.3);
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 16px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* 背景装饰 */
+        .bg-decoration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .bg-decoration::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(ellipse at 20% 20%, rgba(57, 197, 187, 0.08) 0%, transparent 50%),
+                        radial-gradient(ellipse at 80% 80%, rgba(163, 113, 247, 0.06) 0%, transparent 50%),
+                        radial-gradient(ellipse at 50% 50%, rgba(240, 136, 62, 0.04) 0%, transparent 60%);
+        }
+
+        .grid-pattern {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(rgba(57, 197, 187, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(57, 197, 187, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            mask-image: radial-gradient(ellipse at center, black 0%, transparent 70%);
+        }
+
+        /* 主容器 */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* 头部 */
+        header {
+            text-align: center;
+            margin-bottom: 48px;
+            animation: fadeInDown 0.6s ease-out;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 16px rgba(57, 197, 187, 0.3);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin-top: 8px;
+        }
+
+        /* 搜索区域 */
+        .search-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            margin-bottom: 32px;
+            box-shadow: var(--shadow-md);
+            animation: fadeInUp 0.6s ease-out 0.1s both;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .search-box {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            padding: 16px 20px 16px 48px;
+            font-size: 1.1rem;
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .input-wrapper input:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 0 4px var(--accent-cyan-dim);
+        }
+
+        .input-wrapper input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 1.2rem;
+        }
+
+        /* 查询类型选择 */
+        .query-types {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .query-type-btn {
+            padding: 10px 20px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .query-type-btn:hover {
+            border-color: var(--text-muted);
+            color: var(--text-primary);
+        }
+
+        .query-type-btn.active {
+            background: var(--accent-cyan-dim);
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        .search-btn {
+            padding: 16px 32px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--accent-cyan), #2da69e);
+            border: none;
+            border-radius: var(--radius-md);
+            color: var(--bg-primary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(57, 197, 187, 0.35);
+        }
+
+        .search-btn:active {
+            transform: translateY(0);
+        }
+
+        .search-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* 加载动画 */
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid transparent;
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        .search-btn.loading .spinner {
+            display: block;
+        }
+
+        .search-btn.loading .btn-text {
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 结果区域 */
+        .results-section {
+            display: none;
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        .results-section.visible {
+            display: block;
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .result-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .result-domain {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-cyan);
+            background: var(--accent-cyan-dim);
+            padding: 4px 12px;
+            border-radius: var(--radius-sm);
+        }
+
+        .result-tabs {
+            display: flex;
+            gap: 4px;
+            background: var(--bg-tertiary);
+            padding: 4px;
+            border-radius: var(--radius-sm);
+        }
+
+        .result-tab {
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            background: transparent;
+            border: none;
+            border-radius: 4px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .result-tab:hover {
+            color: var(--text-primary);
+        }
+
+        .result-tab.active {
+            background: var(--bg-card);
+            color: var(--accent-cyan);
+        }
+
+        /* 结果卡片 */
+        .result-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+        }
+
+        .result-content {
+            display: none;
+            padding: 24px;
+        }
+
+        .result-content.active {
+            display: block;
+        }
+
+        /* WHOIS 结果样式 */
+        .whois-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .whois-item {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            border-left: 3px solid var(--accent-cyan);
+        }
+
+        .whois-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .whois-value {
+            font-size: 1rem;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            word-break: break-all;
+        }
+
+        .whois-value.list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .whois-value .tag {
+            display: inline-block;
+            background: var(--bg-tertiary);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            margin: 2px 4px 2px 0;
+        }
+
+        /* DNS 结果样式 */
+        .dns-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .dns-table th,
+        .dns-table td {
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .dns-table th {
+            background: var(--bg-secondary);
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .dns-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .dns-table tr:hover td {
+            background: var(--bg-secondary);
+        }
+
+        .dns-type {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        .dns-type.A { background: rgba(63, 185, 80, 0.2); color: var(--accent-green); }
+        .dns-type.AAAA { background: rgba(88, 166, 255, 0.2); color: var(--accent-blue); }
+        .dns-type.CNAME { background: rgba(163, 113, 247, 0.2); color: var(--accent-purple); }
+        .dns-type.MX { background: rgba(240, 136, 62, 0.2); color: var(--accent-orange); }
+        .dns-type.NS { background: rgba(57, 197, 187, 0.2); color: var(--accent-cyan); }
+        .dns-type.TXT { background: rgba(139, 148, 158, 0.2); color: var(--text-secondary); }
+        .dns-type.SOA { background: rgba(248, 81, 73, 0.2); color: var(--accent-red); }
+
+        .dns-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            word-break: break-all;
+        }
+
+        .dns-ttl {
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+        }
+
+        /* 原始数据 */
+        .raw-data {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.8;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            color: var(--text-secondary);
+        }
+
+        /* 错误状态 */
+        .error-message {
+            background: rgba(248, 81, 73, 0.1);
+            border: 1px solid rgba(248, 81, 73, 0.3);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            color: var(--accent-red);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .error-icon {
+            font-size: 1.5rem;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        /* API 文档链接 */
+        .api-links {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-top: 48px;
+            padding-top: 32px;
+            border-top: 1px solid var(--border-color);
+            animation: fadeInUp 0.6s ease-out 0.2s both;
+        }
+
+        .api-link {
+            padding: 12px 24px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .api-link:hover {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+            transform: translateY(-2px);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 32px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 24px 16px;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .search-box {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .search-box .input-wrapper {
+                flex: 1 !important;
+            }
+
+            .search-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .whois-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .result-header {
+                flex-direction: column;
+                gap: 16px;
+                align-items: flex-start;
+            }
+
+            .api-links {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-decoration">
+        <div class="grid-pattern"></div>
+    </div>
+
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">🔍</div>
+                <h1>域名查询系统</h1>
+            </div>
+            <p class="subtitle">WHOIS 信息查询 & DNS 记录解析</p>
+        </header>
+
+        <section class="search-section">
+            <div class="search-box">
+                <div class="input-wrapper">
+                    <span class="input-icon">🌐</span>
+                    <input
+                        type="text"
+                        id="domainInput"
+                        placeholder="输入域名，例如：google.com"
+                        autocomplete="off"
+                        spellcheck="false"
+                    >
+                </div>
+                <div class="input-wrapper" style="flex: 0 0 200px;">
+                    <span class="input-icon">🔑</span>
+                    <input
+                        type="password"
+                        id="apiKeyInput"
+                        placeholder="API Key"
+                        autocomplete="off"
+                        spellcheck="false"
+                    >
+                </div>
+                <button class="search-btn" id="searchBtn" onclick="performSearch()">
+                    <span class="btn-text">查询</span>
+                    <div class="spinner"></div>
+                </button>
+            </div>
+            <div class="query-types">
+                <button class="query-type-btn active" data-type="all" onclick="setQueryType(this)">
+                    📋 综合查询
+                </button>
+                <button class="query-type-btn" data-type="whois" onclick="setQueryType(this)">
+                    📝 WHOIS
+                </button>
+                <button class="query-type-btn" data-type="dns" onclick="setQueryType(this)">
+                    🔗 DNS
+                </button>
+            </div>
+            <div style="margin-top: 16px; text-align: center;">
+                <small style="color: var(--text-muted); font-size: 0.85rem;">
+                    💡 API Key 可在 <a href="/admin" style="color: var(--accent-cyan); text-decoration: none;">管理面板</a> 获取
+                </small>
+            </div>
+        </section>
+
+        <section class="results-section" id="resultsSection">
+            <div class="result-header">
+                <div class="result-title">
+                    查询结果：<span class="result-domain" id="resultDomain"></span>
+                </div>
+                <div class="result-tabs" id="resultTabs">
+                    <button class="result-tab active" data-tab="whois" onclick="switchTab(this)">WHOIS</button>
+                    <button class="result-tab" data-tab="dns" onclick="switchTab(this)">DNS</button>
+                    <button class="result-tab" data-tab="raw" onclick="switchTab(this)">原始数据</button>
+                </div>
+            </div>
+            <div class="result-card">
+                <div class="result-content active" id="whoisContent"></div>
+                <div class="result-content" id="dnsContent"></div>
+                <div class="result-content" id="rawContent"></div>
+            </div>
+        </section>
+
+        <div class="api-links">
+            <a href="/api/docs" class="api-link" target="_blank">
+                📚 API 文档 (Swagger)
+            </a>
+            <a href="/api/redoc" class="api-link" target="_blank">
+                📖 API 文档 (ReDoc)
+            </a>
+            <a href="/test" class="api-link">
+                🧪 API 测试工具
+            </a>
+            <a href="/admin" class="api-link">
+                ⚙️ 管理面板
+            </a>
+        </div>
+
+        <footer>
+            <p>域名 WHOIS & DNS 查询系统 v1.0 | 基于 FastAPI 构建</p>
+        </footer>
+    </div>
+
+    <script>
+        let currentQueryType = 'all';
+        let lastResult = null;
+
+        // 设置查询类型
+        function setQueryType(btn) {
+            document.querySelectorAll('.query-type-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentQueryType = btn.dataset.type;
+        }
+
+        // 切换标签页
+        function switchTab(btn) {
+            const tab = btn.dataset.tab;
+            document.querySelectorAll('.result-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.result-content').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById(tab + 'Content').classList.add('active');
+        }
+
+        // 执行搜索
+        async function performSearch() {
+            const domain = document.getElementById('domainInput').value.trim();
+            const apiKey = document.getElementById('apiKeyInput').value.trim();
+
+            if (!domain) {
+                alert('请输入域名');
+                return;
+            }
+
+            if (!apiKey) {
+                alert('请输入 API Key（可在管理面板获取）');
+                return;
+            }
+
+            const btn = document.getElementById('searchBtn');
+            btn.classList.add('loading');
+            btn.disabled = true;
+
+            try {
+                let apiUrl;
+                switch (currentQueryType) {
+                    case 'whois':
+                        apiUrl = `/api/whois/${encodeURIComponent(domain)}`;
+                        break;
+                    case 'dns':
+                        apiUrl = `/api/dns/${encodeURIComponent(domain)}`;
+                        break;
+                    default:
+                        apiUrl = `/api/lookup/${encodeURIComponent(domain)}`;
+                }
+
+                const response = await fetch(apiUrl, {
+                    headers: {
+                        'X-API-Key': apiKey
+                    }
+                });
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.detail || '查询失败');
+                }
+
+                // 保存 API Key 到本地存储
+                localStorage.setItem('whoisApiKey', apiKey);
+
+                lastResult = result;
+                displayResults(domain, result.data);
+
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+            }
+        }
+
+        // 显示结果
+        function displayResults(domain, data) {
+            document.getElementById('resultDomain').textContent = domain;
+            document.getElementById('resultsSection').classList.add('visible');
+
+            // 根据查询类型处理数据
+            let whoisData = null;
+            let dnsData = null;
+
+            if (currentQueryType === 'all') {
+                whoisData = data.whois;
+                dnsData = data.dns;
+            } else if (currentQueryType === 'whois') {
+                whoisData = data;
+            } else if (currentQueryType === 'dns') {
+                dnsData = data;
+            }
+
+            // 显示 WHOIS 结果
+            if (whoisData) {
+                document.getElementById('whoisContent').innerHTML = renderWhois(whoisData);
+            } else {
+                document.getElementById('whoisContent').innerHTML = renderEmpty('未查询 WHOIS 信息');
+            }
+
+            // 显示 DNS 结果
+            if (dnsData) {
+                document.getElementById('dnsContent').innerHTML = renderDNS(dnsData);
+            } else {
+                document.getElementById('dnsContent').innerHTML = renderEmpty('未查询 DNS 记录');
+            }
+
+            // 显示原始数据
+            document.getElementById('rawContent').innerHTML = `<pre class="raw-data">${JSON.stringify(data, null, 2)}</pre>`;
+
+            // 更新标签页显示
+            updateTabs(whoisData, dnsData);
+        }
+
+        // 更新标签页
+        function updateTabs(whoisData, dnsData) {
+            const tabs = document.getElementById('resultTabs');
+            const whoisTab = tabs.querySelector('[data-tab="whois"]');
+            const dnsTab = tabs.querySelector('[data-tab="dns"]');
+
+            // 根据数据显示或隐藏标签
+            whoisTab.style.display = whoisData ? 'block' : 'none';
+            dnsTab.style.display = dnsData ? 'block' : 'none';
+
+            // 自动选择第一个可用的标签
+            document.querySelectorAll('.result-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.result-content').forEach(c => c.classList.remove('active'));
+
+            if (whoisData) {
+                whoisTab.classList.add('active');
+                document.getElementById('whoisContent').classList.add('active');
+            } else if (dnsData) {
+                dnsTab.classList.add('active');
+                document.getElementById('dnsContent').classList.add('active');
+            }
+        }
+
+        // 渲染 WHOIS 结果
+        function renderWhois(data) {
+            // 检查是否有错误信息（WHOIS 查询失败）
+            if (data.error) {
+                return `
+                    <div class="error-message" style="background: rgba(240, 136, 62, 0.1); border-color: rgba(240, 136, 62, 0.3); color: var(--accent-orange);">
+                        <span class="error-icon">ℹ️</span>
+                        <div>
+                            <strong>WHOIS 信息不可用</strong>
+                            <p style="margin: 8px 0 0 0; opacity: 0.8; font-size: 0.9rem;">${escapeHtml(data.error)}</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const items = [
+                { label: '注册商', value: data.registrar },
+                { label: '注册人/组织', value: data.registrant },
+                { label: '创建日期', value: data.creation_date },
+                { label: '过期日期', value: data.expiration_date },
+                { label: '更新日期', value: data.updated_date },
+                { label: '国家/地区', value: data.country },
+                { label: 'DNSSEC', value: data.dnssec },
+            ];
+
+            let html = '<div class="whois-grid">';
+
+            items.forEach(item => {
+                if (item.value) {
+                    html += `
+                        <div class="whois-item">
+                            <div class="whois-label">${item.label}</div>
+                            <div class="whois-value">${escapeHtml(item.value)}</div>
+                        </div>
+                    `;
+                }
+            });
+
+            // 域名服务器
+            if (data.name_servers && data.name_servers.length > 0) {
+                html += `
+                    <div class="whois-item">
+                        <div class="whois-label">域名服务器</div>
+                        <div class="whois-value list">
+                            ${data.name_servers.map(ns => `<span class="tag">${escapeHtml(ns)}</span>`).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 域名状态
+            if (data.status && data.status.length > 0) {
+                html += `
+                    <div class="whois-item">
+                        <div class="whois-label">域名状态</div>
+                        <div class="whois-value list">
+                            ${data.status.map(s => `<span class="tag">${escapeHtml(s.split(' ')[0])}</span>`).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 联系邮箱
+            if (data.emails && data.emails.length > 0) {
+                html += `
+                    <div class="whois-item">
+                        <div class="whois-label">联系邮箱</div>
+                        <div class="whois-value list">
+                            ${data.emails.map(e => `<span class="tag">${escapeHtml(e)}</span>`).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            html += '</div>';
+            return html;
+        }
+
+        // 渲染 DNS 结果
+        function renderDNS(data) {
+            if (!data.records || data.records.length === 0) {
+                return renderEmpty('未找到 DNS 记录');
+            }
+
+            let html = `
+                <table class="dns-table">
+                    <thead>
+                        <tr>
+                            <th>类型</th>
+                            <th>记录值</th>
+                            <th>TTL</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            data.records.forEach(record => {
+                html += `
+                    <tr>
+                        <td><span class="dns-type ${record.type}">${record.type}</span></td>
+                        <td class="dns-value">${escapeHtml(record.value)}</td>
+                        <td class="dns-ttl">${record.ttl || '-'} 秒</td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            return html;
+        }
+
+        // 渲染空状态
+        function renderEmpty(message) {
+            return `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📭</div>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+
+        // 显示错误
+        function showError(message) {
+            document.getElementById('resultsSection').classList.add('visible');
+            document.getElementById('whoisContent').innerHTML = `
+                <div class="error-message">
+                    <span class="error-icon">⚠️</span>
+                    <span>${escapeHtml(message)}</span>
+                </div>
+            `;
+            document.getElementById('dnsContent').innerHTML = '';
+            document.getElementById('rawContent').innerHTML = '';
+
+            // 只显示 WHOIS 标签
+            const tabs = document.getElementById('resultTabs');
+            tabs.querySelector('[data-tab="dns"]').style.display = 'none';
+            tabs.querySelector('[data-tab="raw"]').style.display = 'none';
+            tabs.querySelector('[data-tab="whois"]').classList.add('active');
+            document.getElementById('whoisContent').classList.add('active');
+        }
+
+        // HTML 转义
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // 回车键搜索
+        document.getElementById('domainInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+
+        // 页面加载动画
+        document.addEventListener('DOMContentLoaded', function() {
+            // 从本地存储恢复 API Key
+            const savedApiKey = localStorage.getItem('whoisApiKey');
+            if (savedApiKey) {
+                document.getElementById('apiKeyInput').value = savedApiKey;
+            }
+
+            document.getElementById('domainInput').focus();
+        });
+    </script>
+</body>
+</html>
+
