@@ -2,6 +2,11 @@
 
 一个高效可用的域名 WHOIS 和 DNS 查询系统，提供美观的可视化网页界面和 RESTful API 接口。
 
+项目体验: [https://whois.of.ci](https://whois.of.ci)
+```
+测试用户：test/a123456 （请不要修改密码）
+测试key：6b6376fec5086acd9cf8f622feb3928e6851dbd87e4fccbf6d14ecc4a98db60a
+```
 **v2.0 新增：多用户支持、API Key 管理、使用限制、管理面板**
 
 ![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)
