@@ -731,7 +731,7 @@
                 return;
             }
 
-            if (!apiKey) {
+            if (!apiKey && window._webQueryRequireApiKey) {
                 alert('请输入 API Key（可在管理面板获取）');
                 return;
             }
@@ -753,11 +753,9 @@
                         apiUrl = `/api/lookup/${encodeURIComponent(domain)}`;
                 }
 
-                const response = await fetch(apiUrl, {
-                    headers: {
-                        'X-API-Key': apiKey
-                    }
-                });
+                const headers = {};
+                if (apiKey) headers['X-API-Key'] = apiKey;
+                const response = await fetch(apiUrl, { headers });
                 const result = await response.json();
 
                 if (!response.ok) {
@@ -996,7 +994,20 @@
         });
 
         // 页面加载动画
-        document.addEventListener('DOMContentLoaded', function() {
+        window._webQueryRequireApiKey = true; // 默认需要key
+        document.addEventListener('DOMContentLoaded', async function() {
+            // 获取服务器配置
+            try {
+                const res = await fetch('/api/config/public');
+                const cfg = await res.json();
+                window._webQueryRequireApiKey = cfg.web_query_require_api_key;
+                // 如果不需要key，隐藏输入框
+                if (!cfg.web_query_require_api_key) {
+                    const apiKeyWrapper = document.getElementById('apiKeyInput').parentElement;
+                    apiKeyWrapper.style.display = 'none';
+                }
+            } catch(e) {}
+
             // 从本地存储恢复 API Key
             const savedApiKey = localStorage.getItem('whoisApiKey');
             if (savedApiKey) {

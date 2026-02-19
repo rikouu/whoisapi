@@ -1,0 +1,13 @@
+services:
+  whoisapi:
+    build: .
+    container_name: whoisapi
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8900}:8000"
+    volumes:
+      - ./data:/app/data
+    env_file:
+      - .env
+    environment:
+      - TZ=${TZ:-Asia/Tokyo}

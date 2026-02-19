@@ -27,10 +27,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 # 导入自定义模块
 from database import get_db, init_db
 from auth import (
-    get_api_key, require_api_key, optional_api_key, 
-    record_usage, create_admin_user
+    get_api_key, require_api_key, optional_api_key, web_or_api_key,
+    record_usage, create_admin_user, get_current_admin_user
 )
-from models import APIKey, UsageLog
+from models import APIKey, UsageLog, User
 from routers.auth_router import router as auth_router
 from routers.admin_router import router as admin_router
 from routers.apikey_router import router as apikey_router
@@ -1060,7 +1060,7 @@ def _do_whois_query(domain: str) -> tuple[bool, Any, Optional[str]]:
 async def query_whois(
     domain: str,
     request: Request,
-    api_key: APIKey = Depends(require_api_key),
+    api_key: Optional[APIKey] = Depends(web_or_api_key),
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -1095,7 +1095,7 @@ async def query_whois(
         # 记录使用日志
         response_time = int((time.time() - start_time) * 1000)
         log = UsageLog(
-            api_key_id=api_key.id,
+            api_key_id=api_key.id if api_key else None,
             endpoint="/api/whois",
             domain=domain if 'domain' in dir() else None,
             query_type="whois",
@@ -1105,7 +1105,7 @@ async def query_whois(
             user_agent=request.headers.get("user-agent", "")[:500]
         )
         db.add(log)
-        await record_usage(api_key, db)
+        if api_key: await record_usage(api_key, db)
     
     return result
 
@@ -1194,7 +1194,7 @@ async def query_dns(
         default=None,
         description="要查询的记录类型，逗号分隔（如：A,AAAA,MX）。不指定则查询所有常用类型"
     ),
-    api_key: APIKey = Depends(require_api_key),
+    api_key: Optional[APIKey] = Depends(web_or_api_key),
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -1216,7 +1216,7 @@ async def query_dns(
     finally:
         response_time = int((time.time() - start_time) * 1000)
         log = UsageLog(
-            api_key_id=api_key.id,
+            api_key_id=api_key.id if api_key else None,
             endpoint="/api/dns",
             domain=domain,
             query_type="dns",
@@ -1226,7 +1226,7 @@ async def query_dns(
             user_agent=request.headers.get("user-agent", "")[:500]
         )
         db.add(log)
-        await record_usage(api_key, db)
+        if api_key: await record_usage(api_key, db)
     
     return result
 
@@ -1236,7 +1236,7 @@ async def query_dns_type(
     domain: str,
     record_type: str,
     request: Request,
-    api_key: APIKey = Depends(require_api_key),
+    api_key: Optional[APIKey] = Depends(web_or_api_key),
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -1258,7 +1258,7 @@ async def query_dns_type(
     finally:
         response_time = int((time.time() - start_time) * 1000)
         log = UsageLog(
-            api_key_id=api_key.id,
+            api_key_id=api_key.id if api_key else None,
             endpoint=f"/api/dns/{record_type}",
             domain=domain,
             query_type="dns",
@@ -1268,7 +1268,7 @@ async def query_dns_type(
             user_agent=request.headers.get("user-agent", "")[:500]
         )
         db.add(log)
-        await record_usage(api_key, db)
+        if api_key: await record_usage(api_key, db)
     
     return result
 
@@ -1279,7 +1279,7 @@ async def query_dns_type(
 async def full_lookup(
     domain: str,
     request: Request,
-    api_key: APIKey = Depends(require_api_key),
+    api_key: Optional[APIKey] = Depends(web_or_api_key),
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -1329,7 +1329,7 @@ async def full_lookup(
     finally:
         response_time = int((time.time() - start_time) * 1000)
         log = UsageLog(
-            api_key_id=api_key.id,
+            api_key_id=api_key.id if api_key else None,
             endpoint="/api/lookup",
             domain=domain if 'domain' in dir() else None,
             query_type="lookup",
@@ -1339,7 +1339,7 @@ async def full_lookup(
             user_agent=request.headers.get("user-agent", "")[:500]
         )
         db.add(log)
-        await record_usage(api_key, db)
+        if api_key: await record_usage(api_key, db)
     
     return result
 
@@ -1379,8 +1379,26 @@ async def health_check():
     return {
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
-        "version": "2.0.0"
+        "version": "2.1.0"
     }
+
+
+@app.get("/api/config/public", tags=["系统"])
+async def get_public_config():
+    """获取前端需要的公开配置"""
+    return {
+        "web_query_require_api_key": settings.WEB_QUERY_REQUIRE_API_KEY,
+    }
+
+
+@app.put("/api/admin/settings/web-query-api-key", tags=["管理"])
+async def update_web_query_setting(
+    require: bool = Query(..., description="网页查询是否需要 API Key"),
+    current_user: User = Depends(get_current_admin_user),
+):
+    """管理员设置：网页查询是否需要 API Key"""
+    settings.WEB_QUERY_REQUIRE_API_KEY = require
+    return {"message": f"网页查询 API Key 要求已{'开启' if require else '关闭'}", "value": require}
 
 
 if __name__ == "__main__":

@@ -250,6 +250,36 @@ async def optional_api_key(
     return api_key
 
 
+async def web_or_api_key(
+    request: Request,
+    api_key: Optional[APIKey] = Depends(get_api_key),
+    db: AsyncSession = Depends(get_db)
+) -> Optional[APIKey]:
+    """
+    网页查询用的依赖：
+    - 如果 WEB_QUERY_REQUIRE_API_KEY=True，必须提供 API Key
+    - 如果 WEB_QUERY_REQUIRE_API_KEY=False，API Key 可选
+    - 如果提供了 API Key，仍然校验并记录用量
+    """
+    if api_key:
+        # 有 key 就校验限流
+        allowed, error_msg = await check_rate_limit(api_key, db)
+        if not allowed:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=error_msg
+            )
+        return api_key
+    
+    if settings.WEB_QUERY_REQUIRE_API_KEY:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="缺少有效的 API Key，请在请求头中添加 X-API-Key"
+        )
+    
+    return None
+
+
 async def create_admin_user(db: AsyncSession):
     """创建默认管理员用户（如果不存在）"""
     admin = await get_user_by_username(db, settings.ADMIN_USERNAME)

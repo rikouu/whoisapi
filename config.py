@@ -8,7 +8,7 @@ from functools import lru_cache
 class Settings(BaseSettings):
     """应用配置"""
     # 数据库
-    DATABASE_URL: str = "sqlite+aiosqlite:///./whoisapi.db"
+    DATABASE_URL: str = "sqlite+aiosqlite:///./data/whoisapi.db"
     # 数据库配置（MySQL）
     #DATABASE_URL: str = "mysql+aiomysql://root:123456@localhost:3306/whoisapi"
     
@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     # API 默认限制
     DEFAULT_RATE_LIMIT: int = 100  # 每分钟请求数
     DEFAULT_DAILY_LIMIT: int = 1000  # 每日请求数
+    
+    # 网页查询是否需要 API Key（false 则网页可直接查询）
+    WEB_QUERY_REQUIRE_API_KEY: bool = False
     
     class Config:
         env_prefix = ""
