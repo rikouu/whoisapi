@@ -25,7 +25,10 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # 导入自定义模块
+from config import get_settings
 from database import get_db, init_db
+
+settings = get_settings()
 from auth import (
     get_api_key, require_api_key, optional_api_key, web_or_api_key,
     record_usage, create_admin_user, get_current_admin_user
